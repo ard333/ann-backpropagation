@@ -1,11 +1,11 @@
 /*
  * Ardiansyah | http://ard.web.id
  */
-package ann.bp;
+package id.web.ard.ann.bp;
 
 /**
  *
- * @author ardiansyah
+ * @author Ardiansyah <ard333.ardiansyah@gmail.com>
  */
 public class ANNBP {
 
