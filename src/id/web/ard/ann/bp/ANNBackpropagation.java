@@ -6,7 +6,8 @@ package id.web.ard.ann.bp;
 import java.util.Random;
 
 /**
- *
+ * Artificial Neural Network with Backpropagation Training Algorithm.
+ * 
  * @author Ardiansyah <ard333.ardiansyah@gmail.com>
  */
 public final class ANNBackpropagation {
@@ -28,14 +29,23 @@ public final class ANNBackpropagation {
 	private Double[] sigmaForY;
 	private Double[] sigmaForZ;
 	
-	private Double[][] deltaw2;
 	private Double[][] deltaw1;
+	private Double[][] deltaw2;
 	
 	private Double[][] inputTraining;
 	private Double[][] expectedOutput;
 	
 	private Integer epoch;
-
+	
+	/**
+	 * Create new Artificial Neural Network with specify the number of neurons, learning rate and minimum error.
+	 * 
+	 * @param numOfInput number of input unit.
+	 * @param numOfHidden number of hidden neuron.
+	 * @param numOfOutput number of output neuron.
+	 * @param learningRate learning rate (0.1 - 1).
+	 * @param minError minimal error 
+	 */
 	public ANNBackpropagation(Integer numOfInput, Integer numOfHidden, Integer numOfOutput, Double learningRate, Double minError) {
 		this.numOfInput = numOfInput;
 		this.numOfHidden = numOfHidden;
@@ -46,6 +56,9 @@ public final class ANNBackpropagation {
 		this.init();
 	}
 	
+	/**
+	 * Initialize arrays and give random weights.
+	 */
 	private void init() {
 		this.epoch = 0;
 		
@@ -77,11 +90,20 @@ public final class ANNBackpropagation {
 		}
 	}
 	
+	/**
+	 * Set each pattern (Training Data) and Expected Output.
+	 * 
+	 * @param inputTraining set of training data.
+	 * @param expectedOutput set of expected output.
+	 */
 	public void setTrainingData(Double[][] inputTraining, Double[][] expectedOutput) {
 		this.inputTraining = inputTraining;
 		this.expectedOutput = expectedOutput;
 	}
 	
+	/**
+	 * Train ANN until error minimum reached.
+	 */
 	public void train() {
 		Double[] eO = new Double[numOfOutput];
 		if (this.inputTraining!=null && this.expectedOutput!=null) {
@@ -103,6 +125,12 @@ public final class ANNBackpropagation {
 			System.out.println("No training data...");
 		}
 	}
+	
+	/**
+	 * Calculate error average for all pattern.
+	 * 
+	 * @return error average.
+	 */
 	private Double caclERR() {
 		Double[] eO = new Double[numOfOutput];
 		Double err = 0.0;
@@ -122,15 +150,27 @@ public final class ANNBackpropagation {
 		return errTotal;
 	}
 	
+	/**
+	 * Test pattern after training.
+	 * 
+	 * @param input input pattern.
+	 */
 	public void test(Double[] input) {
 		System.arraycopy(input, 0, this.X, 0, this.numOfInput);
 		this.feedForward();
 	}
 	
+	/**
+	 * Feed-forward.
+	 */
 	private void feedForward() {
 		this.setOutputY();
 		this.setOutputZ();
 	}
+	
+	/**
+	 * Calculate each output of hidden neuron.
+	 */
 	private void setOutputY() {
 		for (int a = 0; a < numOfHidden; a++) {
 			this.sigmaForY[a] = 0.0;
@@ -146,6 +186,10 @@ public final class ANNBackpropagation {
 			
 		}
 	}
+	
+	/**
+	 * Calculate each output of output neuron.
+	 */
 	private void setOutputZ() {
 		for (int a = 0; a < numOfOutput; a++) {
 			this.sigmaForZ[a] = 0.0;
@@ -162,6 +206,11 @@ public final class ANNBackpropagation {
 		}
 	}
 	
+	/**
+	 * Backpropagation.
+	 * 
+	 * @param expectedOutput set of expected output.
+	 */
 	private void backPropagation(Double[] expectedOutput) {
 		Double[] fO = new Double[this.numOfOutput];
 		
@@ -195,6 +244,10 @@ public final class ANNBackpropagation {
 		}
 		this.changeWeight();
 	}
+	
+	/**
+	 * Update all weights.
+	 */
 	private void changeWeight() {
 		for (int j = 0; j < numOfHidden+1; j++) {
 			for (int k = 0; k < numOfOutput; k++) {
@@ -208,16 +261,40 @@ public final class ANNBackpropagation {
 		}
 	}
 	
-	private Double sigmoid(Double input) {
-		return 1 / (1 + (double)Math.exp(-input));
-	}
-	private Double sigmoidDerivative(Double input) {
-		return this.sigmoid(input) * (1-this.sigmoid(input));
+	/**
+	 * Sigmoid Activation Function.
+	 * <br/>f(x) = 1 / ( 1 + exp(-x) )
+	 * 
+	 * @param x an input value.
+	 * @return a result of Sigmoid Activation Function.
+	 */
+	private Double sigmoid(Double x) {
+		return 1 / (1 + (double)Math.exp(-x));
 	}
 	
+	/**
+	 * Derivative of Sigmoid Activation Function.
+	 * <br/>f'(x) = f(x) * ( 1 - f(x) )
+	 * 
+	 * @param x an input value.
+	 * @return  a result of Derivative Sigmoid Activation Function.
+	 */
+	private Double sigmoidDerivative(Double x) {
+		return this.sigmoid(x) * (1-this.sigmoid(x));
+	}
+	
+	/**
+	 * 
+	 * @return 
+	 */
 	public Double[] getOutput() {
 		return this.Z;
 	}
+	
+	/**
+	 * 
+	 * @return 
+	 */
 	public Integer getEpoch() {
 		return this.epoch;
 	}
