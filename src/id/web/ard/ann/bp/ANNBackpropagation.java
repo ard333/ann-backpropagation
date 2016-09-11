@@ -19,14 +19,17 @@ public final class ANNBackpropagation {
 	private final Double minError;
 	
 	private Double[] X;//input
-	private Double[] Z;//hidden
-	private Double[] Y;//output
+	private Double[] Y;//hidden
+	private Double[] Z;//output
 	
-	private Double[][] v;//input->hidden
-	private Double[][] w;//hidden->output
+	private Double[][] w1;//input->hidden
+	private Double[][] w2;//hidden->output
 	
-	private Double[][] deltaW;
-	private Double[][] deltaV;
+	private Double[] sigmaForY;
+	private Double[] sigmaForZ;
+	
+	private Double[][] deltaw2;
+	private Double[][] deltaw1;
 	
 	private Double[][] inputTraining;
 	private Double[][] expectedOutput;
@@ -47,26 +50,29 @@ public final class ANNBackpropagation {
 		this.epoch = 0;
 		
 		this.X = new Double[numOfInput+1];
-		this.Z = new Double[numOfHidden+1];
-		this.Y = new Double[numOfOutput];
+		this.Y = new Double[numOfHidden+1];
+		this.Z = new Double[numOfOutput];
 		this.X[numOfInput] = 1.0;//bias at last index
-		this.Z[numOfHidden] = 1.0;//bias at last index
+		this.Y[numOfHidden] = 1.0;//bias at last index
 		
-		this.v = new Double[numOfInput+1][numOfHidden];
-		this.w = new Double[numOfHidden+1][numOfOutput];
-		this.deltaV = new Double[numOfInput+1][numOfHidden];
-		this.deltaW = new Double[numOfHidden+1][numOfOutput];
+		this.sigmaForY = new Double[numOfHidden+1];
+		this.sigmaForZ = new Double[numOfOutput];
+		
+		this.w1 = new Double[numOfInput+1][numOfHidden];
+		this.w2 = new Double[numOfHidden+1][numOfOutput];
+		this.deltaw1 = new Double[numOfInput+1][numOfHidden];
+		this.deltaw2 = new Double[numOfHidden+1][numOfOutput];
 		
 		Random r = new Random();
 		
 		for (int i = 0; i < this.numOfInput+1; i++) {
 			for (int j = 0; j < this.numOfHidden; j++) {
-				this.v[i][j] = -1 + (1 - (-1)) * r.nextDouble();//-1:1
+				this.w1[i][j] = -1 + (1 - (-1)) * r.nextDouble();//-1:1
 			}
 		}
 		for (int i = 0; i < numOfHidden+1; i++) {
 			for (int j = 0; j < numOfOutput; j++) {
-				this.w[i][j] = -1 + (1 - (-1)) * r.nextDouble();//-1:1
+				this.w2[i][j] = -1 + (1 - (-1)) * r.nextDouble();//-1:1
 			}
 		}
 	}
@@ -94,7 +100,7 @@ public final class ANNBackpropagation {
 				System.out.println("Error: "+err);
 			}while (err > this.minError);
 		} else {
-			System.out.println("Tidak ada data training...");
+			System.out.println("No training data...");
 		}
 	}
 	private Double caclERR() {
@@ -107,7 +113,7 @@ public final class ANNBackpropagation {
 			System.arraycopy(this.expectedOutput[i], 0, eO, 0, this.expectedOutput[i].length);
 			this.feedForward();
 			for (int a = 0; a < this.numOfOutput; a++) {
-				err += Math.pow((eO[a]-this.Y[a]),2);
+				err += Math.pow((eO[a]-this.Z[a]),2);
 			}
 			err /= numOfOutput;
 			errTotal += err;
@@ -122,35 +128,37 @@ public final class ANNBackpropagation {
 	}
 	
 	private void feedForward() {
-		this.setOutputZ();
 		this.setOutputY();
+		this.setOutputZ();
 	}
-	private void setOutputZ() {
-		Double temp[] = new Double[numOfHidden];
+	private void setOutputY() {
 		for (int a = 0; a < numOfHidden; a++) {
-			temp[a] = 0.0;
+			this.sigmaForY[a] = 0.0;
 		}
 		for (int j = 0; j < this.numOfHidden; j++) {
 			for (int i = 0; i < this.numOfInput+1; i++) {
-				temp[j] = temp[j] + this.X[i] * this.v[i][j];
+				this.sigmaForY[j] = this.sigmaForY[j] + this.X[i] * this.w1[i][j];
 			}
 		}
 		for (int j = 0; j < numOfHidden; j++) {
-			this.Z[j] = this.sigmoid(temp[j]);
+			
+			this.Y[j] = this.sigmoid(this.sigmaForY[j]);
+			
 		}
 	}
-	private void setOutputY() {
-		Double temp[] = new Double[numOfOutput];
+	private void setOutputZ() {
 		for (int a = 0; a < numOfOutput; a++) {
-			temp[a] = 0.0;
+			this.sigmaForZ[a] = 0.0;
 		}
 		for (int k = 0; k < this.numOfOutput; k++) {
 			for (int j = 0; j < this.numOfHidden+1; j++) {
-				temp[k] = temp[k] + this.Z[j] * this.w[j][k];
+				this.sigmaForZ[k] = this.sigmaForZ[k] + this.Y[j] * this.w2[j][k];
 			}
 		}
 		for (int k = 0; k < this.numOfOutput; k++) {
-			this.Y[k] = this.sigmoid(temp[k]);
+			
+			this.Z[k] = this.sigmoid(this.sigmaForZ[k]);
+			
 		}
 	}
 	
@@ -158,27 +166,31 @@ public final class ANNBackpropagation {
 		Double[] fO = new Double[this.numOfOutput];
 		
 		for (int k = 0; k < numOfOutput; k++) {
-			fO[k] = (expectedOutput[k]-this.Y[k])*this.Y[k]*(1-this.Y[k]);
+			
+			fO[k] = (expectedOutput[k]-this.Z[k]) * this.sigmoidDerivative(this.sigmaForZ[k]);
+			
 		}
 		for (int j = 0; j < this.numOfHidden+1; j++) {//+bias weight
 			for (int k = 0; k < this.numOfOutput; k++) {
-				this.deltaW[j][k] = this.learningRate * fO[k] * this.Z[j];
+				this.deltaw2[j][k] = this.learningRate * fO[k] * this.Y[j];
 			}
 		}
 		Double[] fHNet = new Double[this.numOfHidden];
 		for (int j = 0; j < this.numOfHidden; j++) {
 			fHNet[j] = 0.0;
 			for (int k = 0; k < this.numOfOutput; k++) {
-				fHNet[j] = fHNet[j] + (fO[k]*this.w[j][k]);
+				fHNet[j] = fHNet[j] + (fO[k]*this.w2[j][k]);
 			}
 		}
 		Double[] fH = new Double[this.numOfHidden];
 		for (int j = 0; j < this.numOfHidden; j++) {
-			fH[j] = fHNet[j]*this.Z[j]*(1-this.Z[j]);
+			
+			fH[j] = fHNet[j] * this.sigmoidDerivative(this.sigmaForY[j]);
+			
 		}
 		for (int i = 0; i < this.numOfInput+1; i++) {
 			for (int j = 0; j < numOfHidden; j++) {
-				this.deltaV[i][j] = this.learningRate * fH[j] * this.X[i];
+				this.deltaw1[i][j] = this.learningRate * fH[j] * this.X[i];
 			}
 		}
 		this.changeWeight();
@@ -186,12 +198,12 @@ public final class ANNBackpropagation {
 	private void changeWeight() {
 		for (int j = 0; j < numOfHidden+1; j++) {
 			for (int k = 0; k < numOfOutput; k++) {
-				this.w[j][k] = this.w[j][k] + this.deltaW[j][k];
+				this.w2[j][k] = this.w2[j][k] + this.deltaw2[j][k];
 			}
 		}
 		for (int i = 0; i < numOfInput+1; i++) {
 			for (int j = 0; j < numOfHidden; j++) {
-				this.v[i][j] = this.v[i][j] + this.deltaV[i][j];
+				this.w1[i][j] = this.w1[i][j] + this.deltaw1[i][j];
 			}
 		}
 	}
@@ -199,8 +211,12 @@ public final class ANNBackpropagation {
 	private Double sigmoid(Double input) {
 		return 1 / (1 + (double)Math.exp(-input));
 	}
+	private Double sigmoidDerivative(Double input) {
+		return this.sigmoid(input) * (1-this.sigmoid(input));
+	}
+	
 	public Double[] getOutput() {
-		return this.Y;
+		return this.Z;
 	}
 	public Integer getEpoch() {
 		return this.epoch;

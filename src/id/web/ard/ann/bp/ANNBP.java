@@ -14,7 +14,7 @@ public class ANNBP {
 	 */
 	public static void main(String[] args) {
 		
-		ANNBackpropagation annBP = new ANNBackpropagation(2, 3, 1, 0.8, 0.001);
+		ANNBackpropagation annBP = new ANNBackpropagation(2, 3, 1, 0.8, 0.01);
 		
 		//==========TRAIN==========
 		Double[][] patternInput = new Double[4][2];
@@ -37,30 +37,22 @@ public class ANNBP {
 		dataTest[0] = 0.0;dataTest[1] = 0.0;
 		annBP.test(dataTest);
 		output = annBP.getOutput();
-		for (Double output1 : output) {
-			System.out.println("0 xor 0 -> "+output1);
-		}
+		System.out.println("0 xor 0 -> "+output[0]);
 		
 		dataTest[0] = 0.0;dataTest[1] = 1.0;
 		annBP.test(dataTest);
 		output = annBP.getOutput();
-		for (Double output1 : output) {
-			System.out.println("0 xor 1 -> "+output1);
-		}
+		System.out.println("0 xor 1 -> "+output[0]);
 		
 		dataTest[0] = 1.0;dataTest[1] = 0.0;
 		annBP.test(dataTest);
 		output = annBP.getOutput();
-		for (Double output1 : output) {
-			System.out.println("1 xor 0 -> "+output1);
-		}
+		System.out.println("1 xor 0 -> "+output[0]);
 		
 		dataTest[0] = 1.0;dataTest[1] = 1.0;
 		annBP.test(dataTest);
 		output = annBP.getOutput();
-		for (Double output1 : output) {
-			System.out.println("1 xor 1 -> "+output1);
-		}
+		System.out.println("1 xor 1 -> "+output[0]);
 		//=====================
 	}
 }
