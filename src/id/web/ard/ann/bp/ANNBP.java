@@ -14,8 +14,7 @@ public class ANNBP {
 	 */
 	public static void main(String[] args) {
 		
-		ANNBackpropagation annBP = new ANNBackpropagation(2, 3, 1, 0.8, 0.01);
-		
+		ANNBackpropagation annBPSigmoid = new ANNBackpropagation(2, 3, 1, 0.9, 0.01, ActivationFunction.SIGMOID);
 		//==========TRAIN==========
 		Double[][] patternInput = new Double[4][2];
 		Double[][] expectedOutput = new Double[4][1];
@@ -25,9 +24,9 @@ public class ANNBP {
 		patternInput[2][0] = 1.0;	patternInput[2][1] = 0.0;	expectedOutput[2][0] = 1.0;
 		patternInput[3][0] = 0.0;	patternInput[3][1] = 1.0;	expectedOutput[3][0] = 1.0;
 		
-		annBP.setTrainingData(patternInput, expectedOutput);
-		annBP.train();
-		System.out.println("Epoch : "+annBP.getEpoch());
+		annBPSigmoid.setTrainingData(patternInput, expectedOutput);
+		annBPSigmoid.train();
+		System.out.println("Epoch : "+annBPSigmoid.getEpoch());
 		//=========================
 		
 		//==========TEST===========
@@ -35,24 +34,22 @@ public class ANNBP {
 		Double[] output;
 		
 		dataTest[0] = 0.0;dataTest[1] = 0.0;
-		annBP.test(dataTest);
-		output = annBP.getOutput();
-		System.out.println("0 xor 0 -> "+output[0]);
+		annBPSigmoid.test(dataTest); output = annBPSigmoid.getOutput();
+		System.out.println("0 0 -> "+output[0]);
 		
 		dataTest[0] = 0.0;dataTest[1] = 1.0;
-		annBP.test(dataTest);
-		output = annBP.getOutput();
-		System.out.println("0 xor 1 -> "+output[0]);
+		annBPSigmoid.test(dataTest); output = annBPSigmoid.getOutput();
+		System.out.println("0 1 -> "+output[0]);
 		
 		dataTest[0] = 1.0;dataTest[1] = 0.0;
-		annBP.test(dataTest);
-		output = annBP.getOutput();
-		System.out.println("1 xor 0 -> "+output[0]);
+		annBPSigmoid.test(dataTest); output = annBPSigmoid.getOutput();
+		System.out.println("1 0 -> "+output[0]);
 		
 		dataTest[0] = 1.0;dataTest[1] = 1.0;
-		annBP.test(dataTest);
-		output = annBP.getOutput();
-		System.out.println("1 xor 1 -> "+output[0]);
+		annBPSigmoid.test(dataTest); output = annBPSigmoid.getOutput();
+		System.out.println("1 1 -> "+output[0]);
 		//=====================
+		
 	}
+		
 }

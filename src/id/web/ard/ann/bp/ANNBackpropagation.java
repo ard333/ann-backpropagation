@@ -36,6 +36,7 @@ public final class ANNBackpropagation {
 	private Double[][] expectedOutput;
 	
 	private Integer epoch;
+	private ActivationFunction activationFunction;
 	
 	/**
 	 * Create new Artificial Neural Network with specify the number of neurons, learning rate and minimum error.
@@ -46,12 +47,16 @@ public final class ANNBackpropagation {
 	 * @param learningRate learning rate (0.1 - 1).
 	 * @param minError minimal error 
 	 */
-	public ANNBackpropagation(Integer numOfInput, Integer numOfHidden, Integer numOfOutput, Double learningRate, Double minError) {
+	public ANNBackpropagation(
+			Integer numOfInput, Integer numOfHidden, Integer numOfOutput,
+			Double learningRate, Double minError, ActivationFunction activationFunction
+	) {
 		this.numOfInput = numOfInput;
 		this.numOfHidden = numOfHidden;
 		this.numOfOutput = numOfOutput;
 		this.learningRate = learningRate;
 		this.minError = minError;
+		this.activationFunction = activationFunction;
 		
 		this.init();
 	}
@@ -181,9 +186,19 @@ public final class ANNBackpropagation {
 			}
 		}
 		for (int j = 0; j < numOfHidden; j++) {
-			
-			this.Y[j] = this.sigmoid(this.sigmaForY[j]);
-			
+			if (null != this.activationFunction) switch (this.activationFunction) {
+				case SIGMOID:
+					this.Y[j] = this.sigmoid(this.sigmaForY[j]);
+					break;
+				case BIPOLAR_SIGMOID:
+					this.Y[j] = this.bipolarSigmoid(this.sigmaForY[j]);
+					break;
+				case TANH:
+					this.Y[j] = this.tanH(this.sigmaForY[j]);
+					break;
+				default:
+					break;
+			}
 		}
 	}
 	
@@ -200,9 +215,19 @@ public final class ANNBackpropagation {
 			}
 		}
 		for (int k = 0; k < this.numOfOutput; k++) {
-			
-			this.Z[k] = this.sigmoid(this.sigmaForZ[k]);
-			
+			if (null != this.activationFunction) switch (this.activationFunction) {
+				case SIGMOID:
+					this.Z[k] = this.sigmoid(this.sigmaForZ[k]);
+					break;
+				case BIPOLAR_SIGMOID:
+					this.Z[k] = this.bipolarSigmoid(this.sigmaForZ[k]);
+					break;
+				case TANH:
+					this.Z[k] = this.tanH(this.sigmaForZ[k]);
+					break;
+				default:
+					break;
+			}
 		}
 	}
 	
@@ -215,9 +240,19 @@ public final class ANNBackpropagation {
 		Double[] fO = new Double[this.numOfOutput];
 		
 		for (int k = 0; k < numOfOutput; k++) {
-			
-			fO[k] = (expectedOutput[k]-this.Z[k]) * this.sigmoidDerivative(this.sigmaForZ[k]);
-			
+			if (null != this.activationFunction) switch (this.activationFunction) {
+				case SIGMOID:
+					fO[k] = (expectedOutput[k]-this.Z[k]) * this.sigmoidDerivative(this.sigmaForZ[k]);
+					break;
+				case BIPOLAR_SIGMOID:
+					fO[k] = (expectedOutput[k]-this.Z[k]) * this.bipolarSigmoidDerivative(this.sigmaForZ[k]);
+					break;
+				case TANH:
+					fO[k] = (expectedOutput[k]-this.Z[k]) * this.tanHDerivative(this.sigmaForZ[k]);
+					break;
+				default:
+					break;
+			}
 		}
 		for (int j = 0; j < this.numOfHidden+1; j++) {//+bias weight
 			for (int k = 0; k < this.numOfOutput; k++) {
@@ -233,9 +268,19 @@ public final class ANNBackpropagation {
 		}
 		Double[] fH = new Double[this.numOfHidden];
 		for (int j = 0; j < this.numOfHidden; j++) {
-			
-			fH[j] = fHNet[j] * this.sigmoidDerivative(this.sigmaForY[j]);
-			
+			if (null != this.activationFunction) switch (this.activationFunction) {
+				case SIGMOID:
+					fH[j] = fHNet[j] * this.sigmoidDerivative(this.sigmaForY[j]);
+					break;
+				case BIPOLAR_SIGMOID:
+					fH[j] = fHNet[j] * this.bipolarSigmoidDerivative(this.sigmaForY[j]);
+					break;
+				case TANH:
+					fH[j] = fHNet[j] * this.tanHDerivative(this.sigmaForY[j]);
+					break;
+				default:
+					break;
+			}
 		}
 		for (int i = 0; i < this.numOfInput+1; i++) {
 			for (int j = 0; j < numOfHidden; j++) {
@@ -263,7 +308,7 @@ public final class ANNBackpropagation {
 	
 	/**
 	 * Sigmoid Activation Function.
-	 * <br/>f(x) = 1 / ( 1 + exp(-x) )
+	 * <br/>f(x) = 1 / (1 + exp(-x))
 	 * 
 	 * @param x an input value.
 	 * @return a result of Sigmoid Activation Function.
@@ -274,7 +319,7 @@ public final class ANNBackpropagation {
 	
 	/**
 	 * Derivative of Sigmoid Activation Function.
-	 * <br/>f'(x) = f(x) * ( 1 - f(x) )
+	 * <br/>f'(x) = f(x) * (1 - f(x))
 	 * 
 	 * @param x an input value.
 	 * @return  a result of Derivative Sigmoid Activation Function.
@@ -284,18 +329,67 @@ public final class ANNBackpropagation {
 	}
 	
 	/**
+	 * Sigmoid Bipolar Activation Function.
+	 * <br/>f(x) = 2 / (1 + exp(-x)) - 1
 	 * 
-	 * @return 
+	 * @param x an input value.
+	 * @return a result of Sigmoid Bipolar Activation Function.
+	 */
+	private Double bipolarSigmoid(Double x) {
+		return 2/(1+Math.exp(-x))-1;
+	}
+	
+	/**
+	 * Derivative of Sigmoid Bipolar Activation Function.
+	 * <br/>f'(x) = 0.5 * (1 + f(x)) * (1 - f(x))
+	 * 
+	 * @param x an input value.
+	 * @return  a result of Derivative Sigmoid Bipolar Activation Function.
+	 */
+	private Double bipolarSigmoidDerivative(Double x) {
+		return 0.5 * (1+this.bipolarSigmoid(x)) * (1-this.bipolarSigmoid(x));
+	}
+	
+	/**
+	 * TanH Activation Function.
+	 * <br/>f(x) = 2 / (1 + exp(-x)) - 1
+	 * <br/>output range -1 until 1.
+	 * 
+	 * @param x an input value.
+	 * @return a result of TanH Activation Function.
+	 */
+	private Double tanH(Double x) {
+		return 2/(1 + Math.exp(-2*x))-1;
+	}
+	
+	/**
+	 * Derivative of TanH Activation Function.
+	 * <br/>f'(x) = 0.5 * (1 + f(x)) * (1 - f(x))
+	 * <br/>output range -1 until 1.
+	 * 
+	 * @param x an input value.
+	 * @return  a result of Derivative TanH Activation Function.
+	 */
+	private Double tanHDerivative(Double x) {
+		return 1- Math.pow(this.tanH(x), 2);
+	}
+	
+	/**
+	 * Method for getting output of each output neuron.
+	 * 
+	 * @return output of each output neuron.
 	 */
 	public Double[] getOutput() {
 		return this.Z;
 	}
 	
 	/**
+	 * Method for getting epoch until minimum error reached.
 	 * 
-	 * @return 
+	 * @return epoch until minimum error reached. 
 	 */
 	public Integer getEpoch() {
 		return this.epoch;
 	}
+	
 }
