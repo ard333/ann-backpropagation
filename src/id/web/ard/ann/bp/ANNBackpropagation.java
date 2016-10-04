@@ -3,6 +3,7 @@
  */
 package id.web.ard.ann.bp;
 
+import java.util.ArrayList;
 import java.util.Random;
 
 /**
@@ -38,18 +39,25 @@ public final class ANNBackpropagation {
 	private Integer epoch;
 	private ActivationFunction activationFunction;
 	
+	private ArrayList<Double[][]> w1ChangesHistory;
+	private ArrayList<Double[][]> w2ChangesHistory;
+	private Integer windowSize;
+	
 	/**
-	 * Create new Artificial Neural Network with specify the number of neurons, learning rate and minimum error.
+	 * Create new Artificial Neural Network with specify parameters.
 	 * 
 	 * @param numOfInput number of input unit.
 	 * @param numOfHidden number of hidden neuron.
 	 * @param numOfOutput number of output neuron.
 	 * @param learningRate learning rate (0.1 - 1).
-	 * @param minError minimal error 
+	 * @param minError minimal error.
+	 * @param activationFunction selected activation function.
+	 * @param windowSize number of history weights changes stored, 0 if standard Update weights.
 	 */
 	public ANNBackpropagation(
 			Integer numOfInput, Integer numOfHidden, Integer numOfOutput,
-			Double learningRate, Double minError, ActivationFunction activationFunction
+			Double learningRate, Double minError, ActivationFunction activationFunction,
+			Integer windowSize
 	) {
 		this.numOfInput = numOfInput;
 		this.numOfHidden = numOfHidden;
@@ -57,7 +65,11 @@ public final class ANNBackpropagation {
 		this.learningRate = learningRate;
 		this.minError = minError;
 		this.activationFunction = activationFunction;
-		
+		this.windowSize = windowSize;
+		if (this.windowSize > 0) {
+			this.w1ChangesHistory = new ArrayList<>();
+			this.w2ChangesHistory = new ArrayList<>();
+		}
 		this.init();
 	}
 	
@@ -125,6 +137,16 @@ public final class ANNBackpropagation {
 				}
 				err = this.caclERR();
 				System.out.println("Error: "+err);
+				//=============================
+				if (this.windowSize > 0) {
+					if (epoch > windowSize) {
+						w2ChangesHistory.remove(0);
+						w1ChangesHistory.remove(0);
+					}
+					w2ChangesHistory.add(deltaw2);
+					w1ChangesHistory.add(deltaw1);
+				}
+				//=============================
 			}while (err > this.minError);
 		} else {
 			System.out.println("No training data...");
@@ -256,7 +278,7 @@ public final class ANNBackpropagation {
 		}
 		for (int j = 0; j < this.numOfHidden+1; j++) {//+bias weight
 			for (int k = 0; k < this.numOfOutput; k++) {
-				this.deltaw2[j][k] = this.learningRate * fO[k] * this.Y[j];
+				this.deltaw2[j][k] = this.windowedMomentumChanges(learningRate * fO[k] * this.Y[j], w2ChangesHistory, j, k);
 			}
 		}
 		Double[] fHNet = new Double[this.numOfHidden];
@@ -284,7 +306,7 @@ public final class ANNBackpropagation {
 		}
 		for (int i = 0; i < this.numOfInput+1; i++) {
 			for (int j = 0; j < numOfHidden; j++) {
-				this.deltaw1[i][j] = this.learningRate * fH[j] * this.X[i];
+				this.deltaw1[i][j] = this.windowedMomentumChanges(learningRate * fH[j] * this.X[i], w1ChangesHistory, i, j);
 			}
 		}
 		this.changeWeight();
@@ -303,6 +325,26 @@ public final class ANNBackpropagation {
 			for (int j = 0; j < numOfHidden; j++) {
 				this.w1[i][j] = this.w1[i][j] + this.deltaw1[i][j];
 			}
+		}
+	}
+	
+	private Double windowedMomentumChanges(Double currentChanges, ArrayList<Double[][]> history, Integer a, Integer b) {
+		Double temp = 0.0;
+		if (this.windowSize > 0) {
+			try {
+				for (Double[][] w : history) {
+					temp += w[a][b];
+				}
+				if (currentChanges * temp < 0) {
+					return currentChanges + (currentChanges * temp * -1);
+				} else {
+					return currentChanges;
+				}
+			} catch (java.lang.NullPointerException e) {
+				return currentChanges;
+			}
+		} else {
+			return currentChanges;
 		}
 	}
 	
