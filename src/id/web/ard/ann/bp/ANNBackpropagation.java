@@ -20,15 +20,15 @@ public final class ANNBackpropagation {
 	private final Double learningRate;
 	private final Double minError;
 	
-	private Double[] X;//input
-	private Double[] Y;//hidden
-	private Double[] Z;//output
+	private Double[] I;//input
+	private Double[] H1;//hidden
+	private Double[] O;//output
 	
 	private Double[][] w1;//input->hidden
 	private Double[][] w2;//hidden->output
 	
-	private Double[] sigmaForY;
-	private Double[] sigmaForZ;
+	private Double[] sigmaForH1;
+	private Double[] sigmaForO;
 	
 	private Double[][] deltaw1;
 	private Double[][] deltaw2;
@@ -37,6 +37,7 @@ public final class ANNBackpropagation {
 	private Double[][] expectedOutput;
 	
 	private Integer epoch;
+	private Integer maxEpoch;
 	private ActivationFunction activationFunction;
 	
 	private ArrayList<Double[][]> deltaw1History;
@@ -56,16 +57,20 @@ public final class ANNBackpropagation {
 	 */
 	public ANNBackpropagation(
 			Integer numOfInput, Integer numOfHidden, Integer numOfOutput,
-			Double learningRate, Double minError, ActivationFunction activationFunction,
-			Integer windowSize
+			Double learningRate, Double minError, Integer maxEpoch,
+			ActivationFunction activationFunction, Integer windowSize
 	) {
 		this.numOfInput = numOfInput;
 		this.numOfHidden = numOfHidden;
 		this.numOfOutput = numOfOutput;
+		
 		this.learningRate = learningRate;
 		this.minError = minError;
+		this.maxEpoch = maxEpoch;
+		
 		this.activationFunction = activationFunction;
 		this.windowSize = windowSize;
+		
 		if (this.windowSize > 0) {
 			this.deltaw1History = new ArrayList<>();
 			this.deltaw2History = new ArrayList<>();
@@ -79,14 +84,14 @@ public final class ANNBackpropagation {
 	private void init() {
 		this.epoch = 0;
 		
-		this.X = new Double[numOfInput+1];
-		this.Y = new Double[numOfHidden+1];
-		this.Z = new Double[numOfOutput];
-		this.X[numOfInput] = 1.0;//bias at last index
-		this.Y[numOfHidden] = 1.0;//bias at last index
+		this.I = new Double[numOfInput+1];
+		this.H1 = new Double[numOfHidden+1];
+		this.O = new Double[numOfOutput];
+		this.I[numOfInput] = 1.0;//bias at last index
+		this.H1[numOfHidden] = 1.0;//bias at last index
 		
-		this.sigmaForY = new Double[numOfHidden+1];
-		this.sigmaForZ = new Double[numOfOutput];
+		this.sigmaForH1 = new Double[numOfHidden+1];
+		this.sigmaForO = new Double[numOfOutput];
 		
 		this.w1 = new Double[numOfInput+1][numOfHidden];
 		this.w2 = new Double[numOfHidden+1][numOfOutput];
@@ -129,7 +134,7 @@ public final class ANNBackpropagation {
 			do {
 				this.epoch++;
 				for (int i = 0; i < this.inputTraining.length; i++) {
-					System.arraycopy(this.inputTraining[i], 0, X, 0, this.inputTraining[i].length);
+					System.arraycopy(this.inputTraining[i], 0, I, 0, this.inputTraining[i].length);
 					System.arraycopy(this.expectedOutput[i], 0, eO, 0, this.expectedOutput[i].length);
 					
 					this.feedForward();
@@ -147,7 +152,7 @@ public final class ANNBackpropagation {
 					deltaw1History.add(deltaw1);
 				}
 				//=============================
-			}while (err > this.minError);
+			}while (err > this.minError && this.epoch < 1000);
 		} else {
 			System.out.println("No training data...");
 		}
@@ -165,11 +170,11 @@ public final class ANNBackpropagation {
 		
 		for (int i = 0; i < this.inputTraining.length; i++) {
 			err = 0.0;
-			System.arraycopy(this.inputTraining[i], 0, X, 0, this.inputTraining[i].length);
+			System.arraycopy(this.inputTraining[i], 0, I, 0, this.inputTraining[i].length);
 			System.arraycopy(this.expectedOutput[i], 0, eO, 0, this.expectedOutput[i].length);
 			this.feedForward();
 			for (int a = 0; a < this.numOfOutput; a++) {
-				err += Math.pow((eO[a]-this.Z[a]),2);
+				err += Math.pow((eO[a]-this.O[a]),2);
 			}
 			err /= numOfOutput;
 			errTotal += err;
@@ -184,7 +189,7 @@ public final class ANNBackpropagation {
 	 * @param input input pattern.
 	 */
 	public void test(Double[] input) {
-		System.arraycopy(input, 0, this.X, 0, this.numOfInput);
+		System.arraycopy(input, 0, this.I, 0, this.numOfInput);
 		this.feedForward();
 	}
 	
@@ -192,32 +197,32 @@ public final class ANNBackpropagation {
 	 * Feed-forward.
 	 */
 	private void feedForward() {
-		this.setOutputY();
-		this.setOutputZ();
+		this.setOutputH1();
+		this.setOutputO();
 	}
 	
 	/**
 	 * Calculate each output of hidden neuron.
 	 */
-	private void setOutputY() {
+	private void setOutputH1() {
 		for (int a = 0; a < numOfHidden; a++) {
-			this.sigmaForY[a] = 0.0;
+			this.sigmaForH1[a] = 0.0;
 		}
 		for (int j = 0; j < this.numOfHidden; j++) {
 			for (int i = 0; i < this.numOfInput+1; i++) {
-				this.sigmaForY[j] = this.sigmaForY[j] + this.X[i] * this.w1[i][j];
+				this.sigmaForH1[j] = this.sigmaForH1[j] + this.I[i] * this.w1[i][j];
 			}
 		}
 		for (int j = 0; j < numOfHidden; j++) {
 			if (null != this.activationFunction) switch (this.activationFunction) {
 				case SIGMOID:
-					this.Y[j] = this.sigmoid(this.sigmaForY[j]);
+					this.H1[j] = this.sigmoid(this.sigmaForH1[j]);
 					break;
 				case BIPOLAR_SIGMOID:
-					this.Y[j] = this.bipolarSigmoid(this.sigmaForY[j]);
+					this.H1[j] = this.bipolarSigmoid(this.sigmaForH1[j]);
 					break;
 				case TANH:
-					this.Y[j] = this.tanH(this.sigmaForY[j]);
+					this.H1[j] = this.tanH(this.sigmaForH1[j]);
 					break;
 				default:
 					break;
@@ -228,25 +233,25 @@ public final class ANNBackpropagation {
 	/**
 	 * Calculate each output of output neuron.
 	 */
-	private void setOutputZ() {
+	private void setOutputO() {
 		for (int a = 0; a < numOfOutput; a++) {
-			this.sigmaForZ[a] = 0.0;
+			this.sigmaForO[a] = 0.0;
 		}
 		for (int k = 0; k < this.numOfOutput; k++) {
 			for (int j = 0; j < this.numOfHidden+1; j++) {
-				this.sigmaForZ[k] = this.sigmaForZ[k] + this.Y[j] * this.w2[j][k];
+				this.sigmaForO[k] = this.sigmaForO[k] + this.H1[j] * this.w2[j][k];
 			}
 		}
 		for (int k = 0; k < this.numOfOutput; k++) {
 			if (null != this.activationFunction) switch (this.activationFunction) {
 				case SIGMOID:
-					this.Z[k] = this.sigmoid(this.sigmaForZ[k]);
+					this.O[k] = this.sigmoid(this.sigmaForO[k]);
 					break;
 				case BIPOLAR_SIGMOID:
-					this.Z[k] = this.bipolarSigmoid(this.sigmaForZ[k]);
+					this.O[k] = this.bipolarSigmoid(this.sigmaForO[k]);
 					break;
 				case TANH:
-					this.Z[k] = this.tanH(this.sigmaForZ[k]);
+					this.O[k] = this.tanH(this.sigmaForO[k]);
 					break;
 				default:
 					break;
@@ -265,13 +270,13 @@ public final class ANNBackpropagation {
 		for (int k = 0; k < numOfOutput; k++) {
 			if (null != this.activationFunction) switch (this.activationFunction) {
 				case SIGMOID:
-					fO[k] = (expectedOutput[k]-this.Z[k]) * this.sigmoidDerivative(this.sigmaForZ[k]);
+					fO[k] = (expectedOutput[k]-this.O[k]) * this.sigmoidDerivative(this.sigmaForO[k]);
 					break;
 				case BIPOLAR_SIGMOID:
-					fO[k] = (expectedOutput[k]-this.Z[k]) * this.bipolarSigmoidDerivative(this.sigmaForZ[k]);
+					fO[k] = (expectedOutput[k]-this.O[k]) * this.bipolarSigmoidDerivative(this.sigmaForO[k]);
 					break;
 				case TANH:
-					fO[k] = (expectedOutput[k]-this.Z[k]) * this.tanHDerivative(this.sigmaForZ[k]);
+					fO[k] = (expectedOutput[k]-this.O[k]) * this.tanHDerivative(this.sigmaForO[k]);
 					break;
 				default:
 					break;
@@ -279,7 +284,7 @@ public final class ANNBackpropagation {
 		}
 		for (int j = 0; j < this.numOfHidden+1; j++) {//+bias weight
 			for (int k = 0; k < this.numOfOutput; k++) {
-				this.deltaw2[j][k] = this.windowedMomentumChanges(learningRate * fO[k] * this.Y[j], deltaw2History, j, k);
+				this.deltaw2[j][k] = this.windowedMomentumChanges(learningRate * fO[k] * this.H1[j], deltaw2History, j, k);
 			}
 		}
 		Double[] fHNet = new Double[this.numOfHidden];
@@ -293,13 +298,13 @@ public final class ANNBackpropagation {
 		for (int j = 0; j < this.numOfHidden; j++) {
 			if (null != this.activationFunction) switch (this.activationFunction) {
 				case SIGMOID:
-					fH[j] = fHNet[j] * this.sigmoidDerivative(this.sigmaForY[j]);
+					fH[j] = fHNet[j] * this.sigmoidDerivative(this.sigmaForH1[j]);
 					break;
 				case BIPOLAR_SIGMOID:
-					fH[j] = fHNet[j] * this.bipolarSigmoidDerivative(this.sigmaForY[j]);
+					fH[j] = fHNet[j] * this.bipolarSigmoidDerivative(this.sigmaForH1[j]);
 					break;
 				case TANH:
-					fH[j] = fHNet[j] * this.tanHDerivative(this.sigmaForY[j]);
+					fH[j] = fHNet[j] * this.tanHDerivative(this.sigmaForH1[j]);
 					break;
 				default:
 					break;
@@ -307,7 +312,7 @@ public final class ANNBackpropagation {
 		}
 		for (int i = 0; i < this.numOfInput+1; i++) {
 			for (int j = 0; j < numOfHidden; j++) {
-				this.deltaw1[i][j] = this.windowedMomentumChanges(learningRate * fH[j] * this.X[i], deltaw1History, i, j);
+				this.deltaw1[i][j] = this.windowedMomentumChanges(learningRate * fH[j] * this.I[i], deltaw1History, i, j);
 			}
 		}
 		this.changeWeight();
@@ -329,6 +334,14 @@ public final class ANNBackpropagation {
 		}
 	}
 	
+	/**
+	 * Windowed Momentum
+	 * @param currentChanges
+	 * @param history
+	 * @param a
+	 * @param b
+	 * @return 
+	 */
 	private Double windowedMomentumChanges(Double currentChanges, ArrayList<Double[][]> history, Integer a, Integer b) {
 		Double temp = 0.0;
 		if (this.windowSize > 0) {
@@ -423,7 +436,7 @@ public final class ANNBackpropagation {
 	 * @return output of each output neuron.
 	 */
 	public Double[] getOutput() {
-		return this.Z;
+		return this.O;
 	}
 	
 	/**

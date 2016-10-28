@@ -14,7 +14,7 @@ public class ANNBP {
 	 */
 	public static void main(String[] args) {
 		
-		ANNBackpropagation annBPSigmoid = new ANNBackpropagation(2, 3, 1, 0.9, 0.01, ActivationFunction.SIGMOID, 10);
+		ANNBackpropagation annBPSigmoid = new ANNBackpropagation(2, 3, 1, 0.9, 0.01, 1000, ActivationFunction.SIGMOID, 0);
 		//==========TRAIN==========
 		Double[][] patternInput = new Double[4][2];
 		Double[][] expectedOutput = new Double[4][1];
