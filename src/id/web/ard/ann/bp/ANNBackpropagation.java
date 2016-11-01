@@ -43,6 +43,7 @@ public final class ANNBackpropagation {
 	private ArrayList<Double[][]> deltaw1History;
 	private ArrayList<Double[][]> deltaw2History;
 	private Integer windowSize;
+	private Boolean randomize;
 	
 	/**
 	 * Create new Artificial Neural Network with specify parameters.
@@ -52,13 +53,14 @@ public final class ANNBackpropagation {
 	 * @param numOfOutput number of output neuron.
 	 * @param learningRate learning rate (0.1 - 1).
 	 * @param minError minimal error.
+	 * @param maxEpoch maximum training iteration.
 	 * @param activationFunction selected activation function.
 	 * @param windowSize number of history weights changes stored, 0 if standard Update weights.
+	 * @param randomize training order (windowed momentum require randomize order).
 	 */
 	public ANNBackpropagation(
-			Integer numOfInput, Integer numOfHidden, Integer numOfOutput,
-			Double learningRate, Double minError, Integer maxEpoch,
-			ActivationFunction activationFunction, Integer windowSize
+			Integer numOfInput, Integer numOfHidden, Integer numOfOutput, Double learningRate, Double minError,
+			Integer maxEpoch, ActivationFunction activationFunction, Integer windowSize, Boolean randomize
 	) {
 		this.numOfInput = numOfInput;
 		this.numOfHidden = numOfHidden;
@@ -70,6 +72,7 @@ public final class ANNBackpropagation {
 		
 		this.activationFunction = activationFunction;
 		this.windowSize = windowSize;
+		this.randomize = randomize;
 		
 		if (this.windowSize > 0) {
 			this.deltaw1History = new ArrayList<>();
@@ -102,12 +105,12 @@ public final class ANNBackpropagation {
 		
 		for (int i = 0; i < this.numOfInput+1; i++) {
 			for (int j = 0; j < this.numOfHidden; j++) {
-				this.w1[i][j] = -1 + (0 - (-1)) * r.nextDouble();//-1:1
+				this.w1[i][j] = -1 + (1 - (-1)) * r.nextDouble();//-1:1
 			}
 		}
 		for (int i = 0; i < numOfHidden+1; i++) {
 			for (int j = 0; j < numOfOutput; j++) {
-				this.w2[i][j] = -1 + (0 - (-1)) * r.nextDouble();//-1:1
+				this.w2[i][j] = -1 + (1 - (-1)) * r.nextDouble();//-1:1
 			}
 		}
 	}
@@ -131,15 +134,23 @@ public final class ANNBackpropagation {
 		if (this.inputTraining!=null && this.expectedOutput!=null) {
 			System.out.println("Learning Process, please wait...");
 			Double err = 0.0;
+			Random r = new Random();
 			do {
 				this.epoch++;
+				int j;
 				for (int i = 0; i < this.inputTraining.length; i++) {
-					System.arraycopy(this.inputTraining[i], 0, I, 0, this.inputTraining[i].length);
-					System.arraycopy(this.expectedOutput[i], 0, eO, 0, this.expectedOutput[i].length);
+					if (randomize) {
+						j = r.nextInt(inputTraining.length);
+					} else {
+						j = i;
+					}
+					System.arraycopy(this.inputTraining[j], 0, I, 0, this.inputTraining[j].length);
+					System.arraycopy(this.expectedOutput[j], 0, eO, 0, this.expectedOutput[j].length);
 					
 					this.feedForward();
 					this.backPropagation(eO);
 				}
+				
 				err = this.caclERR();
 				System.out.println("Error: "+err);
 				//=============================
@@ -152,7 +163,7 @@ public final class ANNBackpropagation {
 					deltaw1History.add(deltaw1);
 				}
 				//=============================
-			}while (err > this.minError && this.epoch < 1000);
+			}while (err > this.minError && this.epoch < this.maxEpoch);
 		} else {
 			System.out.println("No training data...");
 		}

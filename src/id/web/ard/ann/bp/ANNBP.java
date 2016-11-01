@@ -14,7 +14,7 @@ public class ANNBP {
 	 */
 	public static void main(String[] args) {
 		
-		ANNBackpropagation annBPSigmoid = new ANNBackpropagation(2, 3, 1, 0.9, 0.01, 1000, ActivationFunction.SIGMOID, 0);
+		ANNBackpropagation annBPSigmoid = new ANNBackpropagation(2, 3, 1, 0.9, 0.01, 10000, ActivationFunction.SIGMOID, 100, true);
 		//==========TRAIN==========
 		Double[][] patternInput = new Double[4][2];
 		Double[][] expectedOutput = new Double[4][1];
@@ -34,19 +34,30 @@ public class ANNBP {
 		Double[] output;
 		
 		dataTest[0] = 0.0;dataTest[1] = 0.0;
-		annBPSigmoid.test(dataTest); output = annBPSigmoid.getOutput();
+		annBPSigmoid.test(dataTest);
+		output = annBPSigmoid.getOutput();
+		
 		System.out.println("0 0 -> "+output[0]);
 		
+		
 		dataTest[0] = 0.0;dataTest[1] = 1.0;
-		annBPSigmoid.test(dataTest); output = annBPSigmoid.getOutput();
+		annBPSigmoid.test(dataTest);
+		
+		output = annBPSigmoid.getOutput();
 		System.out.println("0 1 -> "+output[0]);
 		
+		
 		dataTest[0] = 1.0;dataTest[1] = 0.0;
-		annBPSigmoid.test(dataTest); output = annBPSigmoid.getOutput();
+		annBPSigmoid.test(dataTest);
+		
+		output = annBPSigmoid.getOutput();
 		System.out.println("1 0 -> "+output[0]);
 		
+		
 		dataTest[0] = 1.0;dataTest[1] = 1.0;
-		annBPSigmoid.test(dataTest); output = annBPSigmoid.getOutput();
+		annBPSigmoid.test(dataTest);
+		
+		output = annBPSigmoid.getOutput();
 		System.out.println("1 1 -> "+output[0]);
 		//=====================
 		
