@@ -356,7 +356,7 @@ public final class ANNBackpropagation {
 	private Double windowedMomentumChanges(Double currentChanges, ArrayList<Double[][]> history, Integer a, Integer b) {
 		Double temp = 0.0;
 		if (this.windowSize > 0) {
-			if (history.size()==this.windowSize) {
+			if (history.size() > this.windowSize) {
 				for (Double[][] w : history) {
 					temp += w[a][b];
 				}
