@@ -40,11 +40,6 @@ public final class ANNBackpropagation {
 	private Integer maxEpoch;
 	private ActivationFunction activationFunction;
 	
-	private ArrayList<Double[][]> deltaw1History;
-	private ArrayList<Double[][]> deltaw2History;
-	private Integer windowSize;
-	private Boolean randomize;
-	
 	/**
 	 * Create new Artificial Neural Network with specify parameters.
 	 * 
@@ -60,7 +55,7 @@ public final class ANNBackpropagation {
 	 */
 	public ANNBackpropagation(
 			Integer numOfInput, Integer numOfHidden, Integer numOfOutput, Double learningRate, Double minError,
-			Integer maxEpoch, ActivationFunction activationFunction, Integer windowSize, Boolean randomize
+			Integer maxEpoch, ActivationFunction activationFunction
 	) {
 		this.numOfInput = numOfInput;
 		this.numOfHidden = numOfHidden;
@@ -71,13 +66,6 @@ public final class ANNBackpropagation {
 		this.maxEpoch = maxEpoch;
 		
 		this.activationFunction = activationFunction;
-		this.windowSize = windowSize;
-		this.randomize = randomize;
-		
-		if (this.windowSize > 0) {
-			this.deltaw1History = new ArrayList<>();
-			this.deltaw2History = new ArrayList<>();
-		}
 		this.init();
 	}
 	
@@ -139,11 +127,7 @@ public final class ANNBackpropagation {
 				this.epoch++;
 				int j;
 				for (int i = 0; i < this.inputTraining.length; i++) {
-					if (randomize) {
-						j = r.nextInt(inputTraining.length);
-					} else {
-						j = i;
-					}
+					j = r.nextInt(inputTraining.length);
 					System.arraycopy(this.inputTraining[j], 0, I, 0, this.inputTraining[j].length);
 					System.arraycopy(this.expectedOutput[j], 0, eO, 0, this.expectedOutput[j].length);
 					
@@ -153,16 +137,6 @@ public final class ANNBackpropagation {
 				
 				err = this.caclERR();
 				System.out.println("Error: "+err);
-				//=============================
-				if (this.windowSize > 0) {
-					if (epoch > windowSize) {
-						deltaw2History.remove(0);
-						deltaw1History.remove(0);
-					}
-					deltaw2History.add(deltaw2);
-					deltaw1History.add(deltaw1);
-				}
-				//=============================
 			}while (err > this.minError && this.epoch < this.maxEpoch);
 		} else {
 			System.out.println("No training data...");
@@ -295,7 +269,7 @@ public final class ANNBackpropagation {
 		}
 		for (int j = 0; j < this.numOfHidden+1; j++) {//+bias weight
 			for (int k = 0; k < this.numOfOutput; k++) {
-				this.deltaw2[j][k] = this.windowedMomentumChanges(learningRate * fO[k] * this.H1[j], deltaw2History, j, k);
+				this.deltaw2[j][k] = learningRate * fO[k] * this.H1[j];
 			}
 		}
 		Double[] fHNet = new Double[this.numOfHidden];
@@ -323,7 +297,7 @@ public final class ANNBackpropagation {
 		}
 		for (int i = 0; i < this.numOfInput+1; i++) {
 			for (int j = 0; j < numOfHidden; j++) {
-				this.deltaw1[i][j] = this.windowedMomentumChanges(learningRate * fH[j] * this.I[i], deltaw1History, i, j);
+				this.deltaw1[i][j] = learningRate * fH[j] * this.I[i];
 			}
 		}
 		this.changeWeight();
@@ -342,34 +316,6 @@ public final class ANNBackpropagation {
 			for (int j = 0; j < numOfHidden; j++) {
 				this.w1[i][j] = this.w1[i][j] + this.deltaw1[i][j];
 			}
-		}
-	}
-	
-	/**
-	 * Windowed Momentum
-	 * @param currentChanges
-	 * @param history
-	 * @param a
-	 * @param b
-	 * @return 
-	 */
-	private Double windowedMomentumChanges(Double currentChanges, ArrayList<Double[][]> history, Integer a, Integer b) {
-		Double temp = 0.0;
-		if (this.windowSize > 0) {
-			if (history.size() > this.windowSize) {
-				for (Double[][] w : history) {
-					temp += w[a][b];
-				}
-				if ((currentChanges * temp) < 0) {
-					return 0.0;
-				} else {
-					return currentChanges;
-				}
-			} else {
-				return currentChanges;
-			}
-		} else {
-			return currentChanges;
 		}
 	}
 	
