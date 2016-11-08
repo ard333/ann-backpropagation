@@ -101,6 +101,34 @@ public final class ANNBackpropagation {
 				this.w2[i][j] = -1 + (1 - (-1)) * r.nextDouble();//-1:1
 			}
 		}
+		this.nguyenWidrow(w1, this.numOfInput, this.numOfHidden);
+		this.nguyenWidrow(w2, this.numOfHidden, this.numOfOutput);
+	}
+	
+	/**
+	 * Nguyen Widrow intilialize
+	 * @param input weights between two layer
+	 * @param n number of first layer.
+	 * @param p number of second layer.
+	 */
+	private void nguyenWidrow(Double[][] input, int n, int p) {
+		double beta = 0.7 * Math.pow(p, 1.0 / n);
+		double[] v = new double[p];
+		for (int j = 0; j < p; j++) {
+			double temp = 0.0;
+			for (int x = 0; x < n; x++) {
+				temp += input[x][j] * input[x][j];
+			}
+			v[j] = Math.sqrt(Math.abs(temp));
+		}
+		for (int i = 0; i < n; i++) {
+			for (int j = 0; j < p; j++) {
+				input[i][j] = beta * input[i][j] / v[j];
+			}
+		}
+		for (int i = 0; i < p; i++) {
+			input[n][p-1] = -beta + (beta - (-beta)) * new Random().nextDouble();
+		}
 	}
 	
 	/**
