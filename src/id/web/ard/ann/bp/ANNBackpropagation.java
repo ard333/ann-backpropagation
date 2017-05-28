@@ -50,8 +50,6 @@ public final class ANNBackpropagation {
 	 * @param minError minimal error.
 	 * @param maxEpoch maximum training iteration.
 	 * @param activationFunction selected activation function.
-	 * @param windowSize number of history weights changes stored, 0 if standard Update weights.
-	 * @param randomize training order (windowed momentum require randomize order).
 	 */
 	public ANNBackpropagation(
 			Integer numOfInput, Integer numOfHidden, Integer numOfOutput, Double learningRate, Double minError,
