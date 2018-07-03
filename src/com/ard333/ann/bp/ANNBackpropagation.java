@@ -1,6 +1,3 @@
-/*
- * Ardiansyah | http://ard.web.id
- */
 package com.ard333.ann.bp;
 
 import java.util.ArrayList;
